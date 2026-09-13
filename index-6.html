@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Appstore- / emalawi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #14171a;
+    --panel: #1b1f23;
+    --line: #2a2f34;
+    --text: #e7e9ea;
+    --dim: #8b9299;
+    --accent: #4c9aff;
+    --ok: #3fb950;
+    --err: #f0625a;
+    --radius: 3px;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  .wrap{
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 48px 20px 80px;
+  }
+  header{
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 24px;
+    margin-bottom: 28px;
+  }
+  .path{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--dim);
+    margin: 0 0 10px;
+  }
+  .path span{ color: var(--accent); }
+  h1{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 26px;
+    font-weight: 700;
+    margin: 0 0 8px;
+    letter-spacing: -0.02em;
+  }
+  .sub{
+    color: var(--dim);
+    font-size: 14px;
+    margin: 0;
+  }
+  #status{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--dim);
+    padding: 14px 0;
+  }
+  #status.error{ color: var(--err); }
+  ul.filelist{
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  li.row{
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 4px;
+    border-bottom: 1px solid var(--line);
+  }
+  li.row:first-child{ border-top: 1px solid var(--line); }
+  .badge{
+    flex: 0 0 auto;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+  .meta{
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .name{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .size{
+    font-size: 12px;
+    color: var(--dim);
+    margin-top: 2px;
+  }
+  a.dl{
+    flex: 0 0 auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--bg);
+    background: var(--accent);
+    text-decoration: none;
+    padding: 8px 14px;
+    border-radius: var(--radius);
+    transition: opacity 0.15s ease;
+  }
+  a.dl:hover{ opacity: 0.85; }
+  a.dl:focus-visible{ outline: 2px solid var(--text); outline-offset: 2px; }
+  .empty{
+    color: var(--dim);
+    font-size: 14px;
+    padding: 20px 0;
+  }
+  footer{
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    font-size: 12px;
+    color: var(--dim);
+  }
+  footer a{ color: var(--dim); }
+  @media (prefers-reduced-motion: reduce){
+    a.dl{ transition: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <p class="path">emalawi / <span>Appstore-</span> / Apps</p>
+      <h1>Available downloads</h1>
+      <p class="sub">Files served straight from the repository. Tap a file to download it.</p>
+    </header>
+
+    <div id="status">Loading file list…</div>
+    <ul class="filelist" id="filelist" hidden></ul>
+
+    <footer>
+      Source: <a href="https://github.com/emalawi/Appstore-" target="_blank" rel="noopener">github.com/emalawi/Appstore-</a>
+    </footer>
+  </div>
+
+<script>
+  const OWNER = 'emalawi';
+  const REPO = 'Appstore-';
+  const FOLDER = 'Apps';
+  const API_URL = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${FOLDER}`;
+
+  const statusEl = document.getElementById('status');
+  const listEl = document.getElementById('filelist');
+
+  function formatSize(bytes){
+    if (bytes < 1024) return bytes + ' B';
+    const units = ['KB','MB','GB'];
+    let val = bytes;
+    let i = -1;
+    do { val /= 1024; i++; } while (val >= 1024 && i < units.length - 1);
+    return val.toFixed(1) + ' ' + units[i];
+  }
+
+  function extBadge(filename){
+    const parts = filename.split('.');
+    const ext = parts.length > 1 ? parts.pop() : '?';
+    return ext.slice(0, 4);
+  }
+
+  async function loadFiles(){
+    try{
+      const res = await fetch(API_URL, {
+        headers: { 'Accept': 'application/vnd.github+json' }
+      });
+
+      if (res.status === 404){
+        statusEl.textContent = `No "${FOLDER}" folder found in the repository yet.`;
+        statusEl.classList.add('error');
+        return;
+      }
+      if (!res.ok){
+        throw new Error(`GitHub API returned ${res.status}`);
+      }
+
+      const data = await res.json();
+      const files = Array.isArray(data) ? data.filter(item => item.type === 'file') : [];
+
+      if (files.length === 0){
+        statusEl.textContent = 'No files here yet. Check back soon.';
+        return;
+      }
+
+      statusEl.hidden = true;
+      listEl.hidden = false;
+
+      files
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .forEach(file => {
+          const li = document.createElement('li');
+          li.className = 'row';
+          li.innerHTML = `
+            <div class="badge">${extBadge(file.name)}</div>
+            <div class="meta">
+              <div class="name">${file.name}</div>
+              <div class="size">${formatSize(file.size)}</div>
+            </div>
+            <a class="dl" href="${file.download_url}" download>Download</a>
+          `;
+          listEl.appendChild(li);
+        });
+
+    } catch (err){
+      statusEl.textContent = 'Could not load the file list. Refresh to try again.';
+      statusEl.classList.add('error');
+      console.error(err);
+    }
+  }
+
+  loadFiles();
+</script>
+</body>
+</html>
