@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Appstore- / emalawi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #14171a;
+    --panel: #1b1f23;
+    --panel-2: #20252a;
+    --line: #2a2f34;
+    --text: #e7e9ea;
+    --dim: #8b9299;
+    --accent: #4c9aff;
+    --err: #f0625a;
+    --radius: 4px;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  .wrap{
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 48px 20px 80px;
+  }
+  header{
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 24px;
+    margin-bottom: 28px;
+  }
+  .path{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--dim);
+    margin: 0 0 10px;
+  }
+  .path span{ color: var(--accent); }
+  h1{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 26px;
+    font-weight: 700;
+    margin: 0 0 8px;
+    letter-spacing: -0.02em;
+  }
+  .sub{
+    color: var(--dim);
+    font-size: 14px;
+    margin: 0;
+  }
+  #status{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--dim);
+    padding: 14px 0;
+  }
+  #status.error{ color: var(--err); }
+
+  .grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+  }
+
+  .card{
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .thumb{
+    position: relative;
+    aspect-ratio: 16 / 9;
+    background: var(--panel-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .thumb img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .thumb .noimg{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--dim);
+    text-transform: uppercase;
+  }
+  .play-btn{
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    background: rgba(20,23,26,0.85);
+    border: 1px solid var(--line);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 6px 10px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .play-btn:hover{ background: rgba(20,23,26,1); }
+  .play-btn svg{ width: 10px; height: 10px; fill: var(--accent); }
+
+  .card-body{
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+  }
+  .name{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    color: var(--text);
+    word-break: break-word;
+  }
+  .size{
+    font-size: 12px;
+    color: var(--dim);
+  }
+  .row-actions{
+    margin-top: auto;
+    display: flex;
+    gap: 8px;
+  }
+  a.dl{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--bg);
+    background: var(--accent);
+    text-decoration: none;
+    padding: 8px 14px;
+    border-radius: var(--radius);
+    text-align: center;
+    flex: 1;
+    transition: opacity 0.15s ease;
+  }
+  a.dl:hover{ opacity: 0.85; }
+  a.dl:focus-visible{ outline: 2px solid var(--text); outline-offset: 2px; }
+
+  .empty{
+    color: var(--dim);
+    font-size: 14px;
+    padding: 20px 0;
+  }
+  footer{
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    font-size: 12px;
+    color: var(--dim);
+  }
+  footer a{ color: var(--dim); }
+
+  /* Video modal */
+  .modal-backdrop{
+    position: fixed;
+    inset: 0;
+    background: rgba(10,12,14,0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 50;
+  }
+  .modal-backdrop[hidden]{ display: none; }
+  .modal-box{
+    width: 100%;
+    max-width: 720px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .modal-head{
+    display: flex;
+    justify-content: flex-end;
+    padding: 8px;
+  }
+  .modal-close{
+    background: none;
+    border: none;
+    color: var(--dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 6px 10px;
+  }
+  .modal-close:hover{ color: var(--text); }
+  .video-frame{
+    position: relative;
+    aspect-ratio: 16 / 9;
+  }
+  .video-frame iframe{
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    a.dl{ transition: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <p class="path">emalawi / <span>Appstore-</span> / Apps</p>
+      <h1>Available downloads</h1>
+      <p class="sub">Files served straight from the repository. Tap a card to preview, download to install.</p>
+    </header>
+
+    <div id="status">Loading file list…</div>
+    <div class="grid" id="grid" hidden></div>
+
+    <footer>
+      Source: <a href="https://github.com/emalawi/Appstore-" target="_blank" rel="noopener">github.com/emalawi/Appstore-</a>
+    </footer>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop" hidden>
+    <div class="modal-box">
+      <div class="modal-head">
+        <button class="modal-close" id="modalClose" aria-label="Close video">Close ✕</button>
+      </div>
+      <div class="video-frame" id="videoFrame"></div>
+    </div>
+  </div>
+
+<script>
+  const OWNER = 'emalawi';
+  const REPO = 'Appstore-';
+  const FOLDER = 'Apps';
+  const BRANCH = 'main'; // change if your default branch is named differently
+  const FILES_API = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${FOLDER}`;
+  const METADATA_URL = `https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/metadata.json`;
+
+  const statusEl = document.getElementById('status');
+  const gridEl = document.getElementById('grid');
+  const modalBackdrop = document.getElementById('modalBackdrop');
+  const videoFrame = document.getElementById('videoFrame');
+  const modalClose = document.getElementById('modalClose');
+
+  function formatSize(bytes){
+    if (bytes < 1024) return bytes + ' B';
+    const units = ['KB','MB','GB'];
+    let val = bytes;
+    let i = -1;
+    do { val /= 1024; i++; } while (val >= 1024 && i < units.length - 1);
+    return val.toFixed(1) + ' ' + units[i];
+  }
+
+  function extBadge(filename){
+    const parts = filename.split('.');
+    const ext = parts.length > 1 ? parts.pop() : '?';
+    return ext.slice(0, 4);
+  }
+
+  // Accepts youtube.com/watch?v=ID, youtu.be/ID, youtube.com/embed/ID, or a bare ID
+  function extractYouTubeId(url){
+    if (!url) return null;
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=)([\w-]{11})/,
+      /(?:youtu\.be\/)([\w-]{11})/,
+      /(?:youtube\.com\/embed\/)([\w-]{11})/,
+      /^([\w-]{11})$/
+    ];
+    for (const re of patterns){
+      const match = url.match(re);
+      if (match) return match[1];
+    }
+    return null;
+  }
+
+  function openVideo(youtubeId){
+    videoFrame.innerHTML = `<iframe src="https://www.youtube.com/embed/${youtubeId}?autoplay=1" title="App demo video" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
+    modalBackdrop.hidden = false;
+  }
+
+  function closeVideo(){
+    modalBackdrop.hidden = true;
+    videoFrame.innerHTML = '';
+  }
+
+  modalClose.addEventListener('click', closeVideo);
+  modalBackdrop.addEventListener('click', (e) => {
+    if (e.target === modalBackdrop) closeVideo();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeVideo();
+  });
+
+  async function loadMetadata(){
+    try{
+      const res = await fetch(METADATA_URL);
+      if (!res.ok) return {};
+      const list = await res.json();
+      // Expect an array like:
+      // [{ "file": "MyApp.apk", "image": "media/myapp.png", "video": "https://youtu.be/XXXXXXXXXXX" }]
+      const map = {};
+      list.forEach(entry => { if (entry.file) map[entry.file] = entry; });
+      return map;
+    } catch (err){
+      console.warn('No metadata.json found or it failed to load — continuing without images/videos.', err);
+      return {};
+    }
+  }
+
+  async function loadFiles(){
+    try{
+      const [filesRes, metadata] = await Promise.all([
+        fetch(FILES_API, { headers: { 'Accept': 'application/vnd.github+json' } }),
+        loadMetadata()
+      ]);
+
+      if (filesRes.status === 404){
+        statusEl.textContent = `No "${FOLDER}" folder found in the repository yet.`;
+        statusEl.classList.add('error');
+        return;
+      }
+      if (!filesRes.ok){
+        throw new Error(`GitHub API returned ${filesRes.status}`);
+      }
+
+      const data = await filesRes.json();
+      const files = Array.isArray(data) ? data.filter(item => item.type === 'file') : [];
+
+      if (files.length === 0){
+        statusEl.textContent = 'No files here yet. Check back soon.';
+        return;
+      }
+
+      statusEl.hidden = true;
+      gridEl.hidden = false;
+
+      files
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .forEach(file => {
+          const meta = metadata[file.name] || {};
+          const youtubeId = extractYouTubeId(meta.video);
+
+          const card = document.createElement('div');
+          card.className = 'card';
+
+          const thumbInner = meta.image
+            ? `<img src="${meta.image}" alt="${file.name} screenshot" loading="lazy">`
+            : `<span class="noimg">${extBadge(file.name)}</span>`;
+
+          const playBtn = youtubeId
+            ? `<button class="play-btn" data-video="${youtubeId}" aria-label="Watch demo video">
+                 <svg viewBox="0 0 16 16"><path d="M3 2l11 6-11 6z"/></svg> Watch demo
+               </button>`
+            : '';
+
+          card.innerHTML = `
+            <div class="thumb">
+              ${thumbInner}
+              ${playBtn}
+            </div>
+            <div class="card-body">
+              <div class="name">${file.name}</div>
+              <div class="size">${formatSize(file.size)}</div>
+              <div class="row-actions">
+                <a class="dl" href="${file.download_url}" download>Download</a>
+              </div>
+            </div>
+          `;
+
+          const btn = card.querySelector('.play-btn');
+          if (btn){
+            btn.addEventListener('click', () => openVideo(btn.dataset.video));
+          }
+
+          gridEl.appendChild(card);
+        });
+
+    } catch (err){
+      statusEl.textContent = 'Could not load the file list. Refresh to try again.';
+      statusEl.classList.add('error');
+      console.error(err);
+    }
+  }
+
+  loadFiles();
+</script>
+</body>
+</html>
